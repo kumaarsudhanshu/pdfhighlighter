@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, send_from_directory
 import fitz  # PyMuPDF
 import os
 import uuid
@@ -10,11 +10,14 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
+        if 'pdf' not in request.files or 'numbers' not in request.form:
+            return "PDF file and numbers are required", 400
+
         pdf_file = request.files['pdf']
         numbers = request.form['numbers'].split(',')
 
-        if not pdf_file or not numbers:
-            return "PDF file and numbers required", 400
+        if not pdf_file or pdf_file.filename == '':
+            return "No PDF file selected", 400
 
         # Clean input numbers
         numbers = [n.strip() for n in numbers if n.strip()]
@@ -27,7 +30,12 @@ def index():
         output_path = input_path.replace(".pdf", "_highlighted.pdf")
         pdf_file.save(input_path)
 
-        doc = fitz.open(input_path)
+        try:
+            doc = fitz.open(input_path)
+        except Exception as e:
+            print(f"Failed to open PDF: {e}")
+            return "Error processing the PDF file.", 500
+
         highlight_color = (1, 1, 0)  # Yellow
         matched_pages = set()
 
@@ -63,4 +71,4 @@ def view_file(filename):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port)
