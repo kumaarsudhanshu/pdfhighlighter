@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, send_from_directory
 import fitz  # PyMuPDF
 import os
 import uuid
@@ -16,12 +16,10 @@ def index():
         if not pdf_file or not numbers:
             return "PDF file and numbers required", 400
 
-        # Clean input numbers
         numbers = [n.strip() for n in numbers if n.strip()]
         if not numbers:
             return "Please enter at least one valid number", 400
 
-        # Save uploaded PDF
         input_filename = str(uuid.uuid4()) + ".pdf"
         input_path = os.path.join(UPLOAD_FOLDER, input_filename)
         output_path = input_path.replace(".pdf", "_highlighted.pdf")
@@ -63,4 +61,5 @@ def view_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
