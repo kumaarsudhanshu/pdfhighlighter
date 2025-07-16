@@ -1,81 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Highlighted PDF Viewer</title>
+  <meta charset="UTF-8" />
+  <title>View Highlighted PDF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --bg-light: #f0f4f8;
+      --bg-dark: #121721;
+      --sidebar-bg-light: #ffffff;
+      --sidebar-bg-dark: #1e1e2e;
+      --text-light: #333;
+      --text-dark: #e5e5f0;
+      --hover-light: #e6f0ff;
+      --hover-dark: #2a2a3d;
+      --btn-gradient: linear-gradient(135deg, #43cea2, #185a9d);
+    }
+
+    * {
+      box-sizing: border-box;
+      transition: background-color 0.4s, color 0.4s;
+    }
+
     body {
       margin: 0;
+      height: 100vh;
+      display: flex;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #f5f5f5;
+      background-color: var(--bg-light);
+      color: var(--text-light);
     }
 
-    .match-bar {
-      background: #ffffff;
-      padding: 20px;
-      border-bottom: 2px solid #e0e0e0;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    body.dark-mode {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
     }
 
-    .match-bar h2 {
-      margin-top: 0;
-      font-size: 22px;
-      color: #333;
+    .sidebar {
+      width: 280px;
+      background: var(--sidebar-bg-light);
+      border-right: 1px solid #ddd;
+      padding: 20px 16px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    body.dark-mode .sidebar {
+      background: var(--sidebar-bg-dark);
+      border-color: #333;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .top-bar h3 {
+      font-size: 18px;
+      margin: 0;
+    }
+
+    .toggle-switch {
+      display: inline-block;
+    }
+
+    .toggle-switch input {
+      display: none;
+    }
+
+    .toggle-switch label {
+      cursor: pointer;
+      width: 50px;
+      height: 26px;
+      background: #ccc;
+      border-radius: 50px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .toggle-switch label::before {
+      content: "☀️";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border-radius: 50%;
+      text-align: center;
+      font-size: 14px;
+      line-height: 22px;
+      transition: transform 0.3s, content 0.3s;
+    }
+
+    .toggle-switch input:checked + label {
+      background: #6a5acd;
+    }
+
+    .toggle-switch input:checked + label::before {
+      content: "🌙";
+      transform: translateX(24px);
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn {
+      background: var(--btn-gradient);
+      border: none;
+      color: white;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+
+    .btn:hover {
+      transform: scale(1.03);
     }
 
     .match-list {
-      list-style: none;
-      padding-left: 0;
-      margin: 10px 0 0 0;
+      margin-top: 10px;
     }
 
-    .match-list li {
-      padding: 8px 12px;
-      background: #fefefe;
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      margin: 6px 0;
-      font-size: 16px;
-      color: #444;
-      transition: background 0.3s ease;
+    .match-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--hover-light);
     }
 
-    .match-list li:hover {
-      background: #f0f8ff;
+    .match-item:hover {
+      background: #d2e8ff;
     }
 
-    .match-list strong {
-      color: #2a6fdb;
+    body.dark-mode .match-item {
+      background: #222a36;
+    }
+
+    body.dark-mode .match-item:hover {
+      background: var(--hover-dark);
+    }
+
+    .match-item span {
+      font-weight: 500;
+    }
+
+    .match-item small {
+      font-size: 13px;
+      color: #777;
     }
 
     iframe {
-      width: 100%;
-      height: 90vh;
+      flex-grow: 1;
+      height: 100vh;
       border: none;
     }
 
-    .no-match {
-      color: #777;
-      font-style: italic;
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #ccc;
+      }
+
+      iframe {
+        height: calc(100vh - 300px);
+      }
     }
   </style>
 </head>
 <body>
 
-  <div class="match-bar">
-    <h2>📄 Matched Results</h2>
-    {% if matches %}
-      <ul class="match-list">
-        {% for number, page in matches %}
-          <li>✅ <strong>{{ number }}</strong> found on <strong>page {{ page }}</strong></li>
+  <div class="sidebar">
+    <div class="top-bar">
+      <h3>🔍 Matches</h3>
+      <div class="toggle-switch">
+        <input type="checkbox" id="darkModeToggle" onchange="toggleMode()">
+        <label for="darkModeToggle"></label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a href="/" class="btn">🏠 Back to Home</a>
+      <a href="{{ url_for('download_file', filename=filename) }}" class="btn">⬇️ Download PDF</a>
+
+      <!-- 📧 Share via Email -->
+      <a href="mailto:?subject=Check out this PDF&body=Hi, check out this highlighted PDF: {{ view_url }}" class="btn" target="_blank">📧 Share via Email</a>
+
+      <!-- 📱 Share on WhatsApp -->
+      <a href="https://wa.me/?text=Check out this highlighted PDF: {{ view_url }}" class="btn" target="_blank">📱 Share on WhatsApp</a>
+    </div>
+
+    <div class="match-list">
+      {% if matches %}
+        {% for term, page in matches %}
+          <div class="match-item" onclick="goToPage({ page })">
+            <span>{{ term }}</span>
+            <small>Pg {{ page }}</small>
+          </div>
         {% endfor %}
-      </ul>
-    {% else %}
-      <p class="no-match">❌ No matches found in the document.</p>
-    {% endif %}
+      {% else %}
+        <p>No matches found.</p>
+      {% endif %}
+    </div>
   </div>
 
-  <iframe src="{{ url_for('view_file', filename=filename) }}"></iframe>
+  <iframe id="pdfViewer" src="{{ url_for('view_file', filename=filename) }}#page=1"></iframe>
+
+  <script>
+    function toggleMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function goToPage(pageNum) {
+      const viewer = document.getElementById("pdfViewer");
+      const base = viewer.src.split('#')[0];
+      viewer.src = `${base}#page=${pageNum}`;
+    }
+  </script>
 
 </body>
 </html>
